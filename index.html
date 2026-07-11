@@ -83,6 +83,13 @@
     cursor:pointer; letter-spacing:1px;
   }
   #adminLink:hover{ opacity:0.7; }
+  #namecardLink{
+    position:fixed; top:12px; left:12px; font-size:0.8em; letter-spacing:0.5px;
+    padding:8px 14px; border-radius:20px; background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.18); color:#fff; text-decoration:none;
+    backdrop-filter:blur(6px); z-index:10;
+  }
+  #namecardLink:hover{ background:rgba(255,255,255,0.16); }
   #adminModal{
     display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
     align-items:center; justify-content:center; z-index:50;
@@ -155,6 +162,7 @@
   </div>
 
   <div id="adminLink">admin</div>
+  <a id="namecardLink" href="namecard.html">🪪 Talvin's namecard</a>
 </div>
 
 <!-- ADMIN MODAL -->
