@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talvin — Digital Namecard</title>
+<meta name="description" content="Talvin's digital namecard — play my mini game, check my GitHub, or drop me a message.">
+<link rel="icon" href="https://github.com/TALVIN29.png">
+<style>
+  :root{
+    --cyan:#00e5ff; --yellow:#ffe600; --purple:#b26bff; --green:#3dff88;
+    --red:#ff4d5e; --blue:#4d79ff; --orange:#ff9d3d; --bg1:#0b0b2a; --bg2:#1a0b3d;
+    --glass: rgba(255,255,255,0.06); --glass-brd: rgba(255,255,255,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
+    font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif; color:#fff;
+  }
+  body{ position:relative; overflow-x:hidden; }
+
+  /* ---------- animated background ---------- */
+  .blob{ position:fixed; border-radius:50%; filter:blur(70px); opacity:0.35; z-index:0; pointer-events:none; }
+  .blob1{ width:420px; height:420px; background:var(--purple); top:-120px; left:-120px; animation:float1 16s ease-in-out infinite; }
+  .blob2{ width:360px; height:360px; background:var(--cyan); bottom:-100px; right:-100px; animation:float2 20s ease-in-out infinite; }
+  .blob3{ width:300px; height:300px; background:var(--orange); top:40%; right:10%; animation:float3 18s ease-in-out infinite; }
+  @keyframes float1{ 0%,100%{transform:translate(0,0);} 50%{transform:translate(60px,80px);} }
+  @keyframes float2{ 0%,100%{transform:translate(0,0);} 50%{transform:translate(-70px,-50px);} }
+  @keyframes float3{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-40px,40px) scale(1.15);} }
+
+  .stars{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .star{ position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.6; animation:twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{opacity:0.15;} 50%{opacity:0.9;} }
+
+  .wrap{ position:relative; z-index:1; max-width:640px; margin:0 auto; padding:36px 20px 80px; }
+
+  /* ---------- hero ---------- */
+  .hero{ text-align:center; margin-bottom:26px; }
+  .avatar{
+    width:110px; height:110px; border-radius:50%; object-fit:cover;
+    border:3px solid transparent;
+    background:linear-gradient(var(--bg1),var(--bg1)) padding-box,
+               linear-gradient(120deg,var(--cyan),var(--purple),var(--orange)) border-box;
+    box-shadow:0 0 40px rgba(0,229,255,0.35);
+    animation:spin-glow 6s linear infinite;
+  }
+  @keyframes spin-glow{ 0%{box-shadow:0 0 30px rgba(0,229,255,0.35);} 50%{box-shadow:0 0 45px rgba(178,107,255,0.5);} 100%{box-shadow:0 0 30px rgba(0,229,255,0.35);} }
+  .name{
+    font-size:2.4em; margin:16px 0 4px; letter-spacing:2px; font-weight:800;
+    background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    background-size:200% auto; animation:shine 4s linear infinite;
+  }
+  @keyframes shine{ to{ background-position:200% center; } }
+  .tagline{ opacity:0.8; font-size:1em; margin-bottom:14px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:6px; }
+  .badge{
+    font-size:0.75em; padding:6px 12px; border-radius:20px; background:var(--glass);
+    border:1px solid var(--glass-brd); backdrop-filter:blur(6px);
+  }
+
+  /* ---------- quick links ---------- */
+  .quicklinks{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:22px 0 30px; }
+  .pill{
+    display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border-radius:30px;
+    background:var(--glass); border:1px solid var(--glass-brd); color:#fff; text-decoration:none;
+    font-size:0.9em; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);
+    transition:transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .pill:hover{ transform:translateY(-3px); background:rgba(255,255,255,0.12); box-shadow:0 8px 20px rgba(0,0,0,0.35); }
+  .pill.gh{ border-color:rgba(255,255,255,0.25); }
+  .pill.game:hover{ box-shadow:0 8px 24px rgba(0,229,255,0.35); }
+  .pill.msg{ background:linear-gradient(90deg,var(--green),#1fbf6b); color:#04210f; border:none; }
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--glass); border:1px solid var(--glass-brd); border-radius:20px;
+    padding:24px; margin-bottom:24px; backdrop-filter:blur(10px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .card h2{ margin:0 0 4px; font-size:1.25em; }
+  .card .sub{ opacity:0.7; font-size:0.85em; margin-bottom:16px; }
+
+  .game-frame-wrap{
+    border-radius:16px; overflow:hidden; border:2px solid rgba(255,255,255,0.15);
+    box-shadow:0 0 40px rgba(0,229,255,0.15); background:#050518;
+  }
+  .game-frame-wrap iframe{ width:100%; height:min(640px, 92vw); min-height:480px; border:0; display:block; }
+  .game-actions{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .btn-outline{
+    flex:1; min-width:140px; text-align:center; padding:10px 14px; border-radius:10px;
+    border:1px solid var(--glass-brd); color:#fff; text-decoration:none; font-size:0.85em;
+    background:rgba(255,255,255,0.04);
+  }
+  .btn-outline:hover{ background:rgba(255,255,255,0.1); }
+
+  .repo-line{ display:flex; align-items:center; gap:10px; font-size:0.85em; opacity:0.85; margin-top:8px; }
+
+  /* ---------- FOMO CTA ---------- */
+  .fomo{ text-align:center; position:relative; overflow:hidden; }
+  .fomo .flame{ font-size:0.78em; color:var(--yellow); margin-bottom:10px; letter-spacing:0.5px; }
+  .cta-btn{
+    display:inline-flex; align-items:center; gap:10px; padding:16px 30px; border-radius:16px;
+    background:linear-gradient(90deg,var(--green),#12c96f); color:#032512; font-weight:800; font-size:1.05em;
+    border:none; cursor:pointer; box-shadow:0 6px 24px rgba(61,255,136,0.4);
+    animation:pulseBtn 2s ease-in-out infinite;
+  }
+  @keyframes pulseBtn{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.045); } }
+  .cta-btn:disabled{ opacity:0.55; cursor:not-allowed; animation:none; transform:none; }
+  .fomo .note{ margin-top:12px; font-size:0.75em; opacity:0.6; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(5,5,25,0.8); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .modal-overlay.active{ display:flex; }
+  .modal-box{
+    width:420px; max-width:100%; max-height:90vh; overflow:auto; background:#100f30;
+    border:1px solid var(--glass-brd); border-radius:18px; padding:26px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5); position:relative;
+    animation:pop 0.25s ease;
+  }
+  @keyframes pop{ from{ transform:scale(0.92); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .modal-box h3{ margin:0 0 4px; }
+  .modal-box .sub{ opacity:0.65; font-size:0.8em; margin-bottom:18px; }
+  .close-x{ position:absolute; top:14px; right:16px; cursor:pointer; opacity:0.6; font-size:1.1em; }
+  .close-x:hover{ opacity:1; }
+  label{ display:block; font-size:0.8em; opacity:0.8; margin:12px 0 5px; }
+  input[type=text], select, textarea{
+    width:100%; padding:11px 13px; border-radius:10px; border:1px solid rgba(255,255,255,0.18);
+    background:rgba(0,0,0,0.3); color:#fff; font-size:0.92em; outline:none; font-family:inherit; resize:vertical;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:var(--cyan); }
+  .hp{ position:absolute; left:-9999px; opacity:0; height:0; }
+  .err-msg{ color:var(--red); font-size:0.78em; min-height:16px; margin-top:6px; }
+  .preview{
+    margin-top:16px; background:rgba(61,255,136,0.06); border:1px solid rgba(61,255,136,0.25);
+    border-radius:12px; padding:12px 14px; font-size:0.82em; line-height:1.5; white-space:pre-wrap;
+  }
+  .preview b{ opacity:0.6; display:block; font-size:0.72em; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; color:var(--green); }
+  .send-btn{
+    width:100%; margin-top:18px; padding:13px; border-radius:12px; border:none; font-weight:800;
+    background:linear-gradient(90deg,var(--green),#12c96f); color:#032512; cursor:pointer; font-size:0.98em;
+  }
+  .send-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .success-box{ text-align:center; padding:10px 0; }
+  .success-box .emoji{ font-size:3em; }
+
+  footer{ text-align:center; opacity:0.35; font-size:0.75em; margin-top:20px; user-select:none; cursor:default; }
+  footer span{ cursor:pointer; }
+
+  /* admin */
+  #adminModal .modal-box{ width:640px; }
+  table{ width:100%; border-collapse:collapse; font-size:0.8em; margin-top:12px; }
+  th,td{ padding:7px 8px; border-bottom:1px solid rgba(255,255,255,0.1); text-align:left; vertical-align:top; }
+  .admin-btns{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .admin-btns button{ padding:9px 14px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid var(--glass-brd); cursor:pointer; }
+  .admin-btns button:hover{ background:rgba(255,255,255,0.18); }
+  .empty-hint{ opacity:0.55; font-size:0.85em; margin-top:10px; }
+
+  .confetti{ position:fixed; top:-10px; width:8px; height:14px; z-index:200; pointer-events:none; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <img class="avatar" src="https://github.com/TALVIN29.png" alt="Talvin" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=Talvin'">
+    <div class="name">TALVIN</div>
+    <div class="tagline">Builder ⚡ Gamer 🎮 Always shipping something fun</div>
+    <div class="badges">
+      <span class="badge">🟢 Open to chat</span>
+      <span class="badge">🎮 1 mini-game live</span>
+      <span class="badge">💻 github.com/TALVIN29</span>
+    </div>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="quicklinks">
+    <a class="pill gh" href="https://github.com/TALVIN29" target="_blank" rel="noopener">🐙 GitHub</a>
+    <a class="pill game" href="#game">🕹️ Play my game</a>
+    <a class="pill msg" href="#contact">💬 Message me</a>
+  </div>
+
+  <!-- GAME -->
+  <section class="card" id="game">
+    <h2>🕹️ PIN-TRIS</h2>
+    <div class="sub">A pinball × tetris mashup I built. Flip the ball, smash the blocks, try to beat your own score — right here, no download.</div>
+    <div class="game-frame-wrap">
+      <iframe src="index.html"
+              title="Pin-Tris mini game" loading="lazy"></iframe>
+    </div>
+    <div class="game-actions">
+      <a class="btn-outline" href="index.html" target="_blank" rel="noopener">⤢ Open fullscreen</a>
+      <a class="btn-outline" href="https://github.com/TALVIN29/tetris-pinball" target="_blank" rel="noopener">📦 View source</a>
+    </div>
+  </section>
+
+  <!-- CONNECT -->
+  <section class="card" id="connect">
+    <h2>🐙 Check out my code</h2>
+    <div class="sub">Everything I build lives on GitHub — including the game above.</div>
+    <div class="repo-line">⭐ <a href="https://github.com/TALVIN29/tetris-pinball" target="_blank" rel="noopener" style="color:var(--cyan);">TALVIN29/tetris-pinball</a></div>
+    <div class="quicklinks" style="margin:16px 0 0;">
+      <a class="pill gh" href="https://github.com/TALVIN29" target="_blank" rel="noopener">View full profile →</a>
+    </div>
+  </section>
+
+  <!-- FOMO CTA -->
+  <section class="card fomo" id="contact">
+    <div class="flame">🔥 I read every message myself — first come, first served</div>
+    <h2 style="margin-bottom:4px;">Got something to talk about?</h2>
+    <div class="sub">Collabs, gigs, questions, or just saying hi — drop me a message.</div>
+    <button class="cta-btn" id="openContactBtn">💬 Message me on WhatsApp</button>
+    <div class="note">Fill a quick note first — so I know who's reaching out and why, before I reply. ⚡ Limited to a few messages replied per day.</div>
+  </section>
+
+  <footer><span id="secretTrigger">✦ Talvin's digital namecard · v1.0</span></footer>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-box">
+    <div class="close-x" id="closeContact">✕</div>
+    <div id="formView">
+      <h3>💬 Send Talvin a message</h3>
+      <div class="sub">This opens WhatsApp with your note pre-filled — nothing sends automatically.</div>
+
+      <label for="leadName">Your name</label>
+      <input type="text" id="leadName" maxlength="40" placeholder="e.g. Alex Tan">
+
+      <label for="leadSource">Where are you reaching out from?</label>
+      <select id="leadSource">
+        <option value="">Select one…</option>
+        <option>Instagram</option>
+        <option>LinkedIn</option>
+        <option>GitHub</option>
+        <option>The mini game 🎮</option>
+        <option>An event / met in person</option>
+        <option>Friend referral</option>
+        <option>Business inquiry</option>
+        <option>Other</option>
+      </select>
+
+      <label for="leadMsg">Your message</label>
+      <textarea id="leadMsg" rows="3" maxlength="300" placeholder="What's up?"></textarea>
+
+      <!-- honeypot: bots fill this, humans never see it -->
+      <input class="hp" type="text" id="leadCompany" tabindex="-1" autocomplete="off">
+
+      <div class="err-msg" id="leadErr"></div>
+
+      <div class="preview" id="previewBox" style="display:none;">
+        <b>Preview — what Talvin will see</b>
+        <div id="previewText"></div>
+      </div>
+
+      <button class="send-btn" id="sendBtn">Send on WhatsApp →</button>
+    </div>
+
+    <div id="successView" style="display:none;">
+      <div class="success-box">
+        <div class="emoji">🚀</div>
+        <h3>Message ready!</h3>
+        <div class="sub" id="successNote">Opening WhatsApp with your note pre-filled…</div>
+        <a class="send-btn" id="waFallbackLink" href="#" target="_blank" rel="noopener" style="display:block; text-decoration:none; text-align:center;">Tap here if WhatsApp didn't open →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN / LEADS DASHBOARD -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <div class="close-x" id="closeAdmin">✕</div>
+    <h3>📋 Lead inbox</h3>
+    <div class="sub">Everyone who filled the contact form, newest first.</div>
+    <div id="leadsTableWrap"></div>
+    <div class="admin-btns">
+      <button id="exportLeadsBtn">⬇ Export CSV</button>
+      <button id="clearLeadsBtn">🗑 Clear all</button>
+      <button id="closeAdminBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ CONFIG — edit freely ============ */
+  const CONFIG = {
+    whatsappNumber: "601124193029",
+    githubUser: "TALVIN29",
+    adminPassword: "talvin", // change this before sharing widely
+    cooldownMinutes: 3,      // min gap between two sends from the same browser
+    dailyLimit: 3            // max sends per browser per rolling 24h
+  };
+  /* ================================================ */
+
+  const LEADS_KEY = "tv_namecard_leads";
+  const SENDLOG_KEY = "tv_namecard_sendlog";
+
+  function getLeads(){ try{ return JSON.parse(localStorage.getItem(LEADS_KEY)) || []; } catch(e){ return []; } }
+  function saveLeads(arr){ localStorage.setItem(LEADS_KEY, JSON.stringify(arr)); }
+  function getSendLog(){ try{ return JSON.parse(localStorage.getItem(SENDLOG_KEY)) || []; } catch(e){ return []; } }
+  function saveSendLog(arr){ localStorage.setItem(SENDLOG_KEY, JSON.stringify(arr)); }
+
+  function pruneSendLog(){
+    const now = Date.now();
+    const log = getSendLog().filter(ts => now - ts < 24*60*60*1000);
+    saveSendLog(log);
+    return log;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  /* ---------- background stars ---------- */
+  const starsEl = document.getElementById('stars');
+  for(let i=0;i<40;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*3)+'s';
+    starsEl.appendChild(s);
+  }
+
+  /* ---------- contact modal ---------- */
+  const contactModal = document.getElementById('contactModal');
+  const formView = document.getElementById('formView');
+  const successView = document.getElementById('successView');
+  const openBtn = document.getElementById('openContactBtn');
+  const closeContact = document.getElementById('closeContact');
+  const sendBtn = document.getElementById('sendBtn');
+  const leadErr = document.getElementById('leadErr');
+  const previewBox = document.getElementById('previewBox');
+  const previewText = document.getElementById('previewText');
+
+  const nameEl = document.getElementById('leadName');
+  const sourceEl = document.getElementById('leadSource');
+  const msgEl = document.getElementById('leadMsg');
+
+  function buildMessage(name, source, msg){
+    return "Hi Talvin! I'm " + name + ", reaching out from " + source + ".\n\n\"" + msg + "\"\n\n— sent via your digital namecard";
+  }
+
+  function updatePreview(){
+    const name = nameEl.value.trim() || "…";
+    const source = sourceEl.value || "…";
+    const msg = msgEl.value.trim();
+    if(!msg){ previewBox.style.display = 'none'; return; }
+    previewBox.style.display = 'block';
+    previewText.textContent = buildMessage(name, source, msg);
+  }
+  nameEl.addEventListener('input', updatePreview);
+  sourceEl.addEventListener('change', updatePreview);
+  msgEl.addEventListener('input', updatePreview);
+
+  function cooldownRemainingMs(){
+    const log = pruneSendLog();
+    if(log.length === 0) return 0;
+    const last = log[log.length-1];
+    const gap = CONFIG.cooldownMinutes*60*1000 - (Date.now()-last);
+    return Math.max(0, gap);
+  }
+  function dailyRemaining(){
+    return CONFIG.dailyLimit - pruneSendLog().length;
+  }
+
+  function refreshSendBtnState(){
+    const remaining = cooldownRemainingMs();
+    const dayLeft = dailyRemaining();
+    if(dayLeft <= 0){
+      sendBtn.disabled = true;
+      sendBtn.textContent = "You're all set for today ✓";
+    } else if(remaining > 0){
+      sendBtn.disabled = true;
+      const secs = Math.ceil(remaining/1000);
+      sendBtn.textContent = "Wait " + secs + "s before sending again";
+      setTimeout(refreshSendBtnState, 1000);
+    } else {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send on WhatsApp →";
+    }
+  }
+
+  function openModal(){
+    formView.style.display = 'block';
+    successView.style.display = 'none';
+    leadErr.textContent = '';
+    contactModal.classList.add('active');
+    refreshSendBtnState();
+  }
+  function closeModal(){ contactModal.classList.remove('active'); }
+
+  openBtn.addEventListener('click', openModal);
+  closeContact.addEventListener('click', closeModal);
+  contactModal.addEventListener('click', (e)=>{ if(e.target === contactModal) closeModal(); });
+
+  sendBtn.addEventListener('click', ()=>{
+    const name = nameEl.value.trim();
+    const source = sourceEl.value;
+    const msg = msgEl.value.trim();
+    const honeypot = document.getElementById('leadCompany').value;
+
+    if(honeypot){
+      // silently treat as bot — pretend success, send nothing
+      showSuccess("Thanks!");
+      return;
+    }
+    if(!name){ leadErr.textContent = "Please enter your name."; return; }
+    if(!source){ leadErr.textContent = "Please select where you're reaching out from."; return; }
+    if(!msg){ leadErr.textContent = "Please write a short message."; return; }
+    if(cooldownRemainingMs() > 0 || dailyRemaining() <= 0){ leadErr.textContent = "Please wait a bit before sending another message."; return; }
+
+    leadErr.textContent = '';
+
+    // save lead locally so Talvin has a backup record
+    const leads = getLeads();
+    leads.unshift({ name, source, message: msg, timestamp: new Date().toLocaleString() });
+    saveLeads(leads);
+
+    // log the send for cooldown / rate limiting
+    const log = pruneSendLog();
+    log.push(Date.now());
+    saveSendLog(log);
+
+    // open WhatsApp with prefilled message
+    const text = encodeURIComponent(buildMessage(name, source, msg));
+    const waUrl = "https://wa.me/" + CONFIG.whatsappNumber + "?text=" + text;
+
+    // always wire up the visible fallback link, in case auto-open is blocked
+    document.getElementById('waFallbackLink').href = waUrl;
+
+    // most reliable cross-browser way to open a new tab from a click handler
+    const opener = document.createElement('a');
+    opener.href = waUrl;
+    opener.target = '_blank';
+    opener.rel = 'noopener';
+    document.body.appendChild(opener);
+    opener.click();
+    opener.remove();
+
+    showSuccess("Opening WhatsApp with your note pre-filled…");
+    fireConfetti();
+    nameEl.value = ''; sourceEl.value = ''; msgEl.value = '';
+    previewBox.style.display = 'none';
+  });
+
+  function showSuccess(note){
+    formView.style.display = 'none';
+    successView.style.display = 'block';
+    document.getElementById('successNote').textContent = note;
+  }
+
+  /* ---------- confetti ---------- */
+  function fireConfetti(){
+    const colors = ['#00e5ff','#ffe600','#b26bff','#3dff88','#ff9d3d'];
+    for(let i=0;i<26;i++){
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = (45 + Math.random()*10) + 'vw';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.transform = 'rotate(' + (Math.random()*360) + 'deg)';
+      document.body.appendChild(c);
+      const duration = 1200 + Math.random()*900;
+      const drift = (Math.random()*200-100);
+      c.animate([
+        { transform: c.style.transform + ' translate(0,0)', opacity:1 },
+        { transform: c.style.transform + ' translate(' + drift + 'px,100vh)', opacity:0.9 }
+      ], { duration: duration, easing:'ease-in' });
+      setTimeout(()=>c.remove(), duration+50);
+    }
+  }
+
+  /* ---------- admin / leads dashboard ---------- */
+  const adminModal = document.getElementById('adminModal');
+  let secretClicks = 0;
+  let secretTimer = null;
+  document.getElementById('secretTrigger').addEventListener('click', ()=>{
+    secretClicks++;
+    clearTimeout(secretTimer);
+    secretTimer = setTimeout(()=>{ secretClicks = 0; }, 1500);
+    if(secretClicks >= 5){
+      secretClicks = 0;
+      const pw = prompt("Admin password:");
+      if(pw === null) return;
+      if(pw !== CONFIG.adminPassword){ alert("Wrong password."); return; }
+      renderAdmin();
+      adminModal.classList.add('active');
+    }
+  });
+  document.getElementById('closeAdmin').addEventListener('click', ()=>adminModal.classList.remove('active'));
+  document.getElementById('closeAdminBtn').addEventListener('click', ()=>adminModal.classList.remove('active'));
+  adminModal.addEventListener('click', (e)=>{ if(e.target === adminModal) adminModal.classList.remove('active'); });
+
+  function renderAdmin(){
+    const leads = getLeads();
+    const wrap = document.getElementById('leadsTableWrap');
+    if(leads.length === 0){
+      wrap.innerHTML = '<div class="empty-hint">No messages yet — they will show up here as soon as someone reaches out.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Name</th><th>From</th><th>Message</th><th>When</th></tr></thead><tbody>';
+    leads.forEach(l=>{
+      html += '<tr><td>'+escapeHtml(l.name)+'</td><td>'+escapeHtml(l.source)+'</td><td>'+escapeHtml(l.message)+'</td><td>'+escapeHtml(l.timestamp)+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  document.getElementById('exportLeadsBtn').addEventListener('click', ()=>{
+    const leads = getLeads();
+    const header = ['Name','Source','Message','Timestamp'];
+    const rows = leads.map(l=>[l.name,l.source,l.message,l.timestamp].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'namecard-leads.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('clearLeadsBtn').addEventListener('click', ()=>{
+    if(confirm('Delete all saved leads? This cannot be undone.')){
+      saveLeads([]);
+      renderAdmin();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
