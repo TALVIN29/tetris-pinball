@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pin-Tris | Ice Breaker Arcade</title>
+<style>
+  :root{
+    --cyan:#00e5ff; --yellow:#ffe600; --purple:#b26bff; --green:#3dff88;
+    --red:#ff4d5e; --blue:#4d79ff; --orange:#ff9d3d; --bg1:#0b0b2a; --bg2:#1a0b3d;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
+    font-family:'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+    color:#fff; overflow:hidden; user-select:none;
+  }
+  #app{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100vh; width:100vw; position:relative;
+  }
+  .screen{
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    width:100%; height:100%; position:absolute; top:0; left:0;
+  }
+  .screen.active{ display:flex; }
+  h1.title{
+    font-size:2.6em; margin:0 0 4px 0; letter-spacing:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--purple),var(--orange));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 30px rgba(178,107,255,0.4);
+  }
+  .subtitle{ opacity:0.75; margin-bottom:28px; font-size:0.95em; letter-spacing:1px; }
+  .panel{
+    background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.12);
+    border-radius:16px; padding:32px 36px; backdrop-filter:blur(6px);
+    box-shadow:0 0 40px rgba(0,229,255,0.08); width:340px; max-width:88vw;
+  }
+  label{ display:block; font-size:0.85em; opacity:0.85; margin:14px 0 6px; }
+  input[type=text], input[type=tel]{
+    width:100%; padding:12px 14px; border-radius:10px; border:2px solid rgba(255,255,255,0.15);
+    background:rgba(0,0,0,0.35); color:#fff; font-size:1em; outline:none;
+  }
+  input:focus{ border-color:var(--cyan); }
+  .err{ color:var(--red); font-size:0.8em; min-height:18px; margin-top:6px; }
+  button{
+    cursor:pointer; border:none; font-family:inherit; font-weight:bold; letter-spacing:1px;
+  }
+  .btn-primary{
+    margin-top:22px; width:100%; padding:14px; border-radius:12px; font-size:1.05em;
+    background:linear-gradient(90deg,var(--cyan),var(--blue)); color:#04102a;
+    box-shadow:0 4px 18px rgba(0,229,255,0.35);
+  }
+  .btn-primary:active{ transform:translateY(1px); }
+  .rules{ font-size:0.78em; opacity:0.65; margin-top:16px; line-height:1.5; text-align:left; }
+  #gameWrap{ position:relative; }
+  canvas{ border-radius:14px; border:3px solid rgba(255,255,255,0.15); background:#050518; box-shadow:0 0 50px rgba(0,229,255,0.15);}
+  #hud{
+    display:flex; justify-content:space-between; width:100%; max-width:460px;
+    margin-bottom:8px; font-size:0.95em; letter-spacing:1px;
+  }
+  #hud span b{ color:var(--yellow); }
+  #controls{ display:flex; justify-content:space-between; width:100%; max-width:460px; margin-top:10px; gap:10px; }
+  .ctrl-btn{
+    flex:1; padding:16px; border-radius:12px; background:rgba(255,255,255,0.08);
+    border:2px solid rgba(255,255,255,0.15); color:#fff; font-size:0.85em;
+  }
+  .ctrl-btn:active{ background:rgba(0,229,255,0.25); }
+  #launchBtn{ background:linear-gradient(90deg,var(--orange),var(--red)); border:none; color:#1a0500; }
+  .prize-card{
+    text-align:center; padding:10px;
+  }
+  .prize-emoji{ font-size:4.5em; margin-bottom:6px; }
+  .prize-name{
+    font-size:1.6em; font-weight:bold; margin:8px 0;
+    background:linear-gradient(90deg,var(--yellow),var(--orange));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .score-line{ opacity:0.8; margin-top:6px; }
+  #adminLink{
+    position:fixed; bottom:8px; right:12px; font-size:0.7em; opacity:0.25;
+    cursor:pointer; letter-spacing:1px;
+  }
+  #adminLink:hover{ opacity:0.7; }
+  #adminModal{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+    align-items:center; justify-content:center; z-index:50;
+  }
+  #adminModal.active{ display:flex; }
+  #adminBox{
+    background:#0f0f2e; border:2px solid rgba(255,255,255,0.15); border-radius:14px;
+    padding:24px; width:640px; max-width:92vw; max-height:80vh; overflow:auto;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:0.85em; margin-top:12px; }
+  th,td{ padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.1); text-align:left; }
+  .adminBtns{ display:flex; gap:10px; margin-top:14px; }
+  .adminBtns button{ padding:8px 14px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; }
+  .flash{ animation:flashAnim 0.25s ease; }
+  @keyframes flashAnim{ 0%{ filter:brightness(2.2);} 100%{ filter:brightness(1);} }
+  #timer.warn{ color:var(--red); animation:pulse 0.6s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN 1: WELCOME / REGISTRATION -->
+  <div class="screen active" id="screenRegister">
+    <h1 class="title">PIN-TRIS</h1>
+    <div class="subtitle">flip the ball &middot; break the blocks &middot; win a prize</div>
+    <div class="panel">
+      <label for="pName">Your name</label>
+      <input type="text" id="pName" placeholder="e.g. Alex Tan" maxlength="40">
+      <label for="pPhone">Phone number</label>
+      <input type="tel" id="pPhone" placeholder="e.g. 012-3456789" maxlength="20">
+      <div class="err" id="regErr"></div>
+      <button class="btn-primary" id="startBtn">START GAME →</button>
+      <div class="rules">
+        Flip the ball with the flippers to smash the tetris blocks.
+        Clear a whole row for a bonus. You get 3 balls and 90 seconds.
+        Your score decides your prize — everyone wins something!
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: GAME -->
+  <div class="screen" id="screenGame">
+    <div id="hud">
+      <span>SCORE: <b id="hudScore">0</b></span>
+      <span>BALLS: <b id="hudBalls">3</b></span>
+      <span id="timer">TIME: <b id="hudTime">90</b></span>
+    </div>
+    <div id="gameWrap">
+      <canvas id="board" width="480" height="640"></canvas>
+    </div>
+    <div id="controls">
+      <button class="ctrl-btn" id="leftFlipBtn">◄ LEFT FLIPPER</button>
+      <button class="ctrl-btn" id="launchBtn">⤒ LAUNCH</button>
+      <button class="ctrl-btn" id="rightFlipBtn">RIGHT FLIPPER ►</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: RESULT -->
+  <div class="screen" id="screenResult">
+    <div class="panel prize-card">
+      <div class="prize-emoji" id="prizeEmoji">🎉</div>
+      <div style="opacity:0.8;">Congratulations,</div>
+      <div class="prize-name" id="prizeWinnerName">Player</div>
+      <div>you won:</div>
+      <div class="prize-name" id="prizeName">Prize</div>
+      <div class="score-line">Final score: <b id="finalScore">0</b></div>
+      <button class="btn-primary" id="playAgainBtn">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <div id="adminLink">admin</div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div id="adminModal">
+  <div id="adminBox">
+    <h3 style="margin-top:0;">Entries</h3>
+    <table id="adminTable">
+      <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Score</th><th>Prize</th><th>Time</th></tr></thead>
+      <tbody id="adminTbody"></tbody>
+    </table>
+    <div class="adminBtns">
+      <button id="exportCsvBtn">Download CSV</button>
+      <button id="clearEntriesBtn">Clear All</button>
+      <button id="closeAdminBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ CONFIG — edit freely ============ */
+  const PRIZES = [
+    { name: "🏆 Grand Prize",   emoji: "🏆", minScore: 3200 },
+    { name: "🥈 Prize 2",       emoji: "🥈", minScore: 2200 },
+    { name: "🥉 Prize 3",       emoji: "🥉", minScore: 1300 },
+    { name: "🎁 Prize 4",       emoji: "🎁", minScore: 600  },
+    { name: "🍬 Lucky Draw Gift", emoji: "🍬", minScore: 0   }
+  ];
+  const GAME_TIME = 90;   // seconds
+  const TOTAL_BALLS = 3;
+  const ADMIN_PASSWORD = "admin"; // change this before your event!
+  /* ================================================ */
+
+  const STORAGE_KEY = "pinTrisEntries";
+
+  function getEntries(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveEntry(entry){
+    const entries = getEntries();
+    entries.push(entry);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  /* ---------- Screen management ---------- */
+  const screens = {
+    register: document.getElementById('screenRegister'),
+    game: document.getElementById('screenGame'),
+    result: document.getElementById('screenResult'),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s=>s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  /* ---------- Registration ---------- */
+  const pName = document.getElementById('pName');
+  const pPhone = document.getElementById('pPhone');
+  const regErr = document.getElementById('regErr');
+  let player = { name:"", phone:"" };
+
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    const name = pName.value.trim();
+    const phone = pPhone.value.trim();
+    const phoneDigits = phone.replace(/[^0-9]/g,'');
+    if(!name){ regErr.textContent = "Please enter your name."; return; }
+    if(phoneDigits.length < 7){ regErr.textContent = "Please enter a valid phone number."; return; }
+    regErr.textContent = "";
+    player = { name, phone };
+    showScreen('game');
+    resetGame();
+  });
+
+  /* ---------- Game setup ---------- */
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  const hudScore = document.getElementById('hudScore');
+  const hudBalls = document.getElementById('hudBalls');
+  const hudTime = document.getElementById('hudTime');
+  const timerEl = document.getElementById('timer');
+
+  const COLORS = {
+    I:'#00e5ff', O:'#ffe600', T:'#b26bff', S:'#3dff88', Z:'#ff4d5e', J:'#4d79ff', L:'#ff9d3d'
+  };
+  const COLOR_KEYS = Object.keys(COLORS);
+
+  const GRID_COLS = 8;
+  const GRID_ROWS = 7;
+  const GRID_LEFT = 20;
+  const GRID_TOP = 50;
+  const CELL_W = (W - 40) / GRID_COLS; // 55
+  const CELL_H = 34;
+
+  let grid = []; // grid[row][col] = colorKey or null
+  let score = 0;
+  let ballsLeft = TOTAL_BALLS;
+  let timeLeft = GAME_TIME;
+  let gameRunning = false;
+  let gameTimerId = null;
+  let rowShiftTimerId = null;
+
+  let ball = null;
+  const BALL_R = 8;
+
+  const flippers = {
+    left:  { pivotX: 150, pivotY: 585, len: 70, angleRest: 0.55, angleUp: -0.55, angle: 0.55, angVel: 0, up:false, side:-1 },
+    right: { pivotX: 330, pivotY: 585, len: 70, angleRest: Math.PI-0.55, angleUp: Math.PI+0.55, angle: Math.PI-0.55, angVel: 0, up:false, side:1 }
+  };
+
+  function emptyGrid(){
+    const g = [];
+    for(let r=0;r<GRID_ROWS;r++){ g.push(new Array(GRID_COLS).fill(null)); }
+    return g;
+  }
+
+  function randomRow(){
+    const row = new Array(GRID_COLS).fill(null);
+    for(let c=0;c<GRID_COLS;c++){
+      if(Math.random() < 0.55){
+        row[c] = COLOR_KEYS[Math.floor(Math.random()*COLOR_KEYS.length)];
+      }
+    }
+    return row;
+  }
+
+  function resetGame(){
+    grid = emptyGrid();
+    for(let r=0;r<GRID_ROWS-2;r++){ grid[r] = randomRow(); }
+    score = 0;
+    ballsLeft = TOTAL_BALLS;
+    timeLeft = GAME_TIME;
+    gameRunning = true;
+    flippers.left.angle = flippers.left.angleRest;
+    flippers.right.angle = flippers.right.angleRest;
+    updateHud();
+    timerEl.classList.remove('warn');
+    spawnBall();
+    if(gameTimerId) clearInterval(gameTimerId);
+    if(rowShiftTimerId) clearInterval(rowShiftTimerId);
+    gameTimerId = setInterval(tickTimer, 1000);
+    rowShiftTimerId = setInterval(shiftRows, 8000);
+    requestAnimationFrame(loop);
+  }
+
+  function spawnBall(){
+    ball = { x: 240, y: 555, vx: 0, vy: 0, active: false };
+  }
+
+  function launchBall(){
+    if(!gameRunning || !ball || ball.active) return;
+    ball.vx = (Math.random()*2-1)*1.5;
+    ball.vy = -13.5;
+    ball.active = true;
+  }
+
+  function tickTimer(){
+    if(!gameRunning) return;
+    timeLeft--;
+    if(timeLeft <= 10) timerEl.classList.add('warn');
+    if(timeLeft <= 0){ timeLeft = 0; endGame(); }
+    updateHud();
+  }
+
+  function shiftRows(){
+    if(!gameRunning) return;
+    grid.pop();               // drop the row closest to the flippers
+    grid.unshift(randomRow()); // insert a fresh row at the top, pushing everything down
+  }
+
+  function updateHud(){
+    hudScore.textContent = score;
+    hudBalls.textContent = ballsLeft;
+    hudTime.textContent = timeLeft;
+  }
+
+  function addScore(pts){
+    score += pts;
+    updateHud();
+  }
+
+  /* ---------- Controls ---------- */
+  function setFlipper(side, up){
+    flippers[side].up = up;
+  }
+  window.addEventListener('keydown', (e)=>{
+    if(e.code === 'ArrowLeft' || e.code === 'KeyA'){ setFlipper('left', true); }
+    if(e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'KeyL'){ setFlipper('right', true); }
+    if(e.code === 'Space'){ e.preventDefault(); launchBall(); }
+  });
+  window.addEventListener('keyup', (e)=>{
+    if(e.code === 'ArrowLeft' || e.code === 'KeyA'){ setFlipper('left', false); }
+    if(e.code === 'ArrowRight' || e.code === 'KeyD' || e.code === 'KeyL'){ setFlipper('right', false); }
+  });
+
+  function bindHold(el, downFn, upFn){
+    el.addEventListener('mousedown', downFn);
+    el.addEventListener('touchstart', (e)=>{ e.preventDefault(); downFn(); }, {passive:false});
+    el.addEventListener('mouseup', upFn);
+    el.addEventListener('mouseleave', upFn);
+    el.addEventListener('touchend', (e)=>{ e.preventDefault(); upFn(); }, {passive:false});
+  }
+  bindHold(document.getElementById('leftFlipBtn'), ()=>setFlipper('left',true), ()=>setFlipper('left',false));
+  bindHold(document.getElementById('rightFlipBtn'), ()=>setFlipper('right',true), ()=>setFlipper('right',false));
+  document.getElementById('launchBtn').addEventListener('click', launchBall);
+
+  /* ---------- Physics ---------- */
+  const GRAVITY = 0.32;
+  const WALL_BOUNCE = 0.82;
+
+  function updateFlipper(f){
+    const target = f.up ? f.angleUp : f.angleRest;
+    const diff = target - f.angle;
+    f.angVel = diff * 0.35;
+    f.angle += f.angVel;
+  }
+
+  function flipperTip(f){
+    return { x: f.pivotX + Math.cos(f.angle)*f.len, y: f.pivotY + Math.sin(f.angle)*f.len };
+  }
+
+  function ballVsFlipper(f){
+    // treat flipper as a capsule (line segment with radius)
+    const tip = flipperTip(f);
+    const px = f.pivotX, py = f.pivotY, tx = tip.x, ty = tip.y;
+    const dx = tx-px, dy = ty-py;
+    const len2 = dx*dx+dy*dy;
+    let t = ((ball.x-px)*dx + (ball.y-py)*dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const closestX = px + t*dx, closestY = py + t*dy;
+    const distX = ball.x-closestX, distY = ball.y-closestY;
+    const dist = Math.sqrt(distX*distX+distY*distY);
+    const flipperR = 14;
+    if(dist < BALL_R+flipperR){
+      const nx = distX/(dist||1), ny = distY/(dist||1);
+      ball.x = closestX + nx*(BALL_R+flipperR);
+      ball.y = closestY + ny*(BALL_R+flipperR);
+      const kick = 9 + Math.abs(f.angVel)*40;
+      ball.vx = nx*kick + f.side*2;
+      ball.vy = ny*kick - 6;
+    }
+  }
+
+  function ballVsGrid(){
+    const col = Math.floor((ball.x - GRID_LEFT) / CELL_W);
+    const rowFloat = (ball.y - GRID_TOP) / CELL_H;
+    const row = Math.floor(rowFloat);
+    if(row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLS) return;
+    if(!grid[row] || !grid[row][col]) return;
+    const cx = GRID_LEFT + col*CELL_W + CELL_W/2;
+    const cy = GRID_TOP + row*CELL_H + CELL_H/2;
+    const halfW = CELL_W/2, halfH = CELL_H/2;
+    const nx = Math.max(cx-halfW, Math.min(ball.x, cx+halfW));
+    const ny = Math.max(cy-halfH, Math.min(ball.y, cy+halfH));
+    const dx = ball.x-nx, dy = ball.y-ny;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist < BALL_R){
+      grid[row][col] = null;
+      addScore(100);
+      flashCell = {row,col,t:6};
+      if(Math.abs(dx) > Math.abs(dy)){ ball.vx *= -1; }
+      else { ball.vy *= -1; }
+      checkLineClear(row);
+    }
+  }
+
+  let flashCell = null;
+
+  function checkLineClear(row){
+    if(grid[row].every(c=>c===null)){
+      addScore(500);
+      // remove that row entirely, add empty row at very top
+      grid.splice(row,1);
+      grid.unshift(new Array(GRID_COLS).fill(null));
+      lineFlash = 10;
+    }
+  }
+  let lineFlash = 0;
+
+  function updateBall(){
+    if(!ball || !ball.active) return;
+    ball.vy += GRAVITY;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    if(ball.x < GRID_LEFT+BALL_R){ ball.x = GRID_LEFT+BALL_R; ball.vx *= -WALL_BOUNCE; }
+    if(ball.x > W-GRID_LEFT-BALL_R){ ball.x = W-GRID_LEFT-BALL_R; ball.vx *= -WALL_BOUNCE; }
+    if(ball.y < GRID_TOP+BALL_R){ ball.y = GRID_TOP+BALL_R; ball.vy *= -WALL_BOUNCE; }
+
+    ballVsGrid();
+    updateFlipper(flippers.left);
+    updateFlipper(flippers.right);
+    ballVsFlipper(flippers.left);
+    ballVsFlipper(flippers.right);
+
+    // drain
+    if(ball.y > H + 20){
+      ballsLeft--;
+      updateHud();
+      if(ballsLeft <= 0){ endGame(); }
+      else { spawnBall(); }
+    }
+  }
+
+  function allBricksCleared(){
+    return grid.every(row=>row.every(c=>c===null));
+  }
+
+  /* ---------- Render ---------- */
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // backdrop grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    for(let c=0;c<=GRID_COLS;c++){
+      ctx.beginPath(); ctx.moveTo(GRID_LEFT+c*CELL_W, GRID_TOP); ctx.lineTo(GRID_LEFT+c*CELL_W, GRID_TOP+GRID_ROWS*CELL_H); ctx.stroke();
+    }
+
+    // bricks
+    for(let r=0;r<GRID_ROWS;r++){
+      for(let c=0;c<GRID_COLS;c++){
+        const key = grid[r][c];
+        if(!key) continue;
+        const x = GRID_LEFT + c*CELL_W, y = GRID_TOP + r*CELL_H;
+        ctx.fillStyle = COLORS[key];
+        const isFlash = flashCell && flashCell.row===r && flashCell.col===c;
+        if(isFlash){ ctx.globalAlpha = 0.5; }
+        ctx.fillRect(x+2, y+2, CELL_W-4, CELL_H-4);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.strokeRect(x+2, y+2, CELL_W-4, CELL_H-4);
+      }
+    }
+    if(flashCell){ flashCell.t--; if(flashCell.t<=0) flashCell=null; }
+
+    if(lineFlash > 0){
+      ctx.fillStyle = `rgba(255,255,0,${lineFlash/20})`;
+      ctx.fillRect(0,0,W,H);
+      lineFlash--;
+    }
+
+    // flippers
+    drawFlipper(flippers.left, '#00e5ff');
+    drawFlipper(flippers.right, '#ff4d5e');
+
+    // ball
+    if(ball){
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      if(!ball.active){
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '13px sans-serif';
+        ctx.fillText('press LAUNCH', ball.x-40, ball.y+28);
+      }
+    }
+
+    // drain hint line
+    ctx.strokeStyle = 'rgba(255,77,94,0.25)';
+    ctx.setLineDash([6,6]);
+    ctx.beginPath(); ctx.moveTo(0,620); ctx.lineTo(W,620); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawFlipper(f, color){
+    const tip = flipperTip(f);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 16;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(f.pivotX, f.pivotY);
+    ctx.lineTo(tip.x, tip.y);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+
+  function loop(){
+    if(!gameRunning) return;
+    updateBall();
+    draw();
+    if(allBricksCleared()){
+      addScore(1000);
+      grid = emptyGrid();
+      for(let r=0;r<GRID_ROWS-2;r++){ grid[r] = randomRow(); }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function endGame(){
+    if(!gameRunning) return;
+    gameRunning = false;
+    clearInterval(gameTimerId);
+    clearInterval(rowShiftTimerId);
+
+    let prize = PRIZES[PRIZES.length-1];
+    for(const p of PRIZES){
+      if(score >= p.minScore){ prize = p; break; }
+    }
+
+    saveEntry({
+      name: player.name,
+      phone: player.phone,
+      score: score,
+      prize: prize.name,
+      timestamp: new Date().toLocaleString()
+    });
+
+    document.getElementById('prizeEmoji').textContent = prize.emoji;
+    document.getElementById('prizeWinnerName').textContent = player.name;
+    document.getElementById('prizeName').textContent = prize.name;
+    document.getElementById('finalScore').textContent = score;
+    showScreen('result');
+  }
+
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    pName.value = ''; pPhone.value = '';
+    showScreen('register');
+  });
+
+  /* ---------- Admin panel ---------- */
+  const adminModal = document.getElementById('adminModal');
+  document.getElementById('adminLink').addEventListener('click', ()=>{
+    const pw = prompt("Admin password:");
+    if(pw !== ADMIN_PASSWORD){ if(pw!==null) alert("Wrong password."); return; }
+    renderAdmin();
+    adminModal.classList.add('active');
+  });
+  document.getElementById('closeAdminBtn').addEventListener('click', ()=>{
+    adminModal.classList.remove('active');
+  });
+  function renderAdmin(){
+    const entries = getEntries();
+    const tbody = document.getElementById('adminTbody');
+    tbody.innerHTML = entries.map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.phone)}</td><td>${e.score}</td><td>${escapeHtml(e.prize)}</td><td>${escapeHtml(e.timestamp)}</td></tr>`).join('');
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+    const entries = getEntries();
+    const header = ['Name','Phone','Score','Prize','Timestamp'];
+    const rows = entries.map(e=>[e.name,e.phone,e.score,e.prize,e.timestamp]
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'pin-tris-entries.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('clearEntriesBtn').addEventListener('click', ()=>{
+    if(confirm("Delete all saved entries? This cannot be undone.")){
+      localStorage.removeItem(STORAGE_KEY);
+      renderAdmin();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
